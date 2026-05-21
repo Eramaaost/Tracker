@@ -1,0 +1,606 @@
+
+<!DOCTYPE html>
+<html lang="et">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tööaja tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f3ee;
+    --surface: #ffffff;
+    --border: #e0dbd2;
+    --text: #1a1814;
+    --muted: #7a7570;
+    --accent: #2d5a3d;
+    --accent-light: #e8f2ec;
+    --danger: #8b2020;
+    --danger-light: #f9eded;
+    --warn: #7a5a10;
+    --warn-light: #fdf6e3;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+
+  header p {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin-top: 0.35rem;
+    font-family: var(--mono);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  /* Name setup screen */
+  #setup-screen { display: block; }
+  #main-screen { display: none; }
+
+  .name-label {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    display: block;
+    font-family: var(--mono);
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+    font-family: var(--sans);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+
+  btn, .btn {
+    display: inline-block;
+  }
+
+  button {
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    width: 100%;
+    margin-top: 1rem;
+    font-size: 1rem;
+  }
+
+  .btn-primary:hover { background: #234a32; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--muted);
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+  }
+
+  .btn-secondary:hover { background: var(--bg); color: var(--text); }
+
+  /* Greeting */
+  .greeting {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+  }
+
+  .date-line {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* Clock in/out */
+  .time-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .time-box {
+    flex: 1;
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+
+  .time-box-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  .time-box-value {
+    font-family: var(--mono);
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .time-box-value.empty {
+    color: var(--border);
+  }
+
+  .action-btn {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 12px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  .action-btn:hover { background: #234a32; }
+  .action-btn:active { transform: scale(0.99); }
+
+  .action-btn.checkout {
+    background: var(--text);
+  }
+
+  .action-btn.checkout:hover { background: #333; }
+
+  .action-btn:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Progress */
+  .progress-wrap {
+    margin: 1rem 0;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .progress-pct {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 0.5s ease;
+  }
+
+  .progress-fill.over { background: #1a7a3a; }
+  .progress-fill.warn { background: #d4a017; }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    margin-top: 0.5rem;
+  }
+
+  .badge-ok { background: var(--accent-light); color: var(--accent); }
+  .badge-warn { background: var(--warn-light); color: var(--warn); }
+  .badge-danger { background: var(--danger-light); color: var(--danger); }
+  .badge-neutral { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+
+  /* History */
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+  }
+
+  .history-item:last-child { border-bottom: none; }
+
+  .history-date {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .history-times {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--text);
+  }
+
+  .history-hours {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .hours-ok { color: var(--accent); }
+  .hours-bad { color: var(--danger); }
+
+  .empty-history {
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 1.5rem 0;
+  }
+
+  .switch-user {
+    text-align: center;
+    margin-top: 1.5rem;
+  }
+
+  .live-clock {
+    font-family: var(--mono);
+    font-size: 2.5rem;
+    font-weight: 500;
+    text-align: center;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin: 1rem 0;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1rem 0;
+  }
+
+  @media (max-width: 400px) {
+    .time-box-value { font-size: 1.2rem; }
+    header h1 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Tööaja tracker</h1>
+    <p id="header-date"></p>
+  </header>
+
+  <!-- Setup screen -->
+  <div id="setup-screen">
+    <div class="card">
+      <div class="card-title">Kes sa oled?</div>
+      <label class="name-label" for="name-input">Sinu nimi</label>
+      <input type="text" id="name-input" placeholder="nt. Mari Tamm" autocomplete="name" />
+      <button class="btn-primary" onclick="startSession()">Alusta ↗</button>
+    </div>
+  </div>
+
+  <!-- Main screen -->
+  <div id="main-screen">
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div class="greeting" id="greeting">Tere!</div>
+          <div class="date-line" id="main-date"></div>
+        </div>
+        <div class="live-clock" id="live-clock" style="font-size:1.4rem; margin:0;"></div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="time-row">
+        <div class="time-box">
+          <div class="time-box-label">Saabumine</div>
+          <div class="time-box-value" id="checkin-display">—</div>
+        </div>
+        <div class="time-box">
+          <div class="time-box-label">Lahkumine</div>
+          <div class="time-box-value" id="checkout-display">—</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap" id="progress-section" style="display:none;">
+        <div class="progress-header">
+          <span class="progress-label">Tööpäeva progress</span>
+          <span class="progress-pct" id="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <div id="status-badge-wrap" style="margin-top:0.75rem;"></div>
+      </div>
+
+      <button class="action-btn" id="main-btn" onclick="handleMainAction()">Registreeri saabumine</button>
+
+    </div>
+
+    <!-- History -->
+    <div class="card">
+      <div class="card-title">Ajalugu</div>
+      <div id="history-list"></div>
+    </div>
+
+    <div class="switch-user">
+      <button class="btn-secondary" onclick="switchUser()">↩ Vaheta kasutajat</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const WORK_MINS = 8 * 60;
+const STORAGE_KEY = 'tooaeg_v1';
+
+function pad(n) { return String(n).padStart(2,'0'); }
+function nowHHMM() { const d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function todayKey() { const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function minsToStr(m) {
+  const abs = Math.abs(m);
+  const h = Math.floor(abs/60), min = abs%60;
+  return (m<0?'-':'')+h+'h '+(min>0?pad(min)+'m':'');
+}
+
+function getData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+function getUserData(name) {
+  const d = getData();
+  return d[name] || {};
+}
+
+function setUserDay(name, key, obj) {
+  const d = getData();
+  if(!d[name]) d[name] = {};
+  d[name][key] = obj;
+  saveData(d);
+}
+
+let currentUser = null;
+let tickInterval = null;
+
+function startSession() {
+  const name = document.getElementById('name-input').value.trim();
+  if(!name) { document.getElementById('name-input').focus(); return; }
+  currentUser = name;
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-screen').style.display = 'block';
+  renderMain();
+  tickInterval = setInterval(tick, 10000);
+}
+
+function switchUser() {
+  clearInterval(tickInterval);
+  currentUser = null;
+  document.getElementById('setup-screen').style.display = 'block';
+  document.getElementById('main-screen').style.display = 'none';
+  document.getElementById('name-input').value = '';
+}
+
+function getToday() {
+  const ud = getUserData(currentUser);
+  return ud[todayKey()] || { checkin: null, checkout: null };
+}
+
+function setToday(obj) {
+  setUserDay(currentUser, todayKey(), obj);
+}
+
+function handleMainAction() {
+  const today = getToday();
+  if(!today.checkin) {
+    setToday({ checkin: nowHHMM(), checkout: null });
+  } else if(!today.checkout) {
+    setToday({ ...today, checkout: nowHHMM() });
+  }
+  renderMain();
+}
+
+function workedMins(ci, co) {
+  if(!ci) return 0;
+  const end = co || nowHHMM();
+  const [ch,cm] = ci.split(':').map(Number);
+  const [eh,em] = end.split(':').map(Number);
+  return Math.max(0, (eh*60+em) - (ch*60+cm));
+}
+
+function renderMain() {
+  const today = getToday();
+  const d = new Date();
+  const days = ['pühapäev','esmaspäev','teisipäev','kolmapäev','neljapäev','reede','laupäev'];
+  const months = ['jaanuar','veebruar','märts','aprill','mai','juuni','juuli','august','september','oktoober','november','detsember'];
+
+  document.getElementById('greeting').textContent = 'Tere, ' + currentUser.split(' ')[0] + '!';
+  document.getElementById('main-date').textContent = days[d.getDay()] + ', ' + d.getDate() + '. ' + months[d.getMonth()] + ' ' + d.getFullYear();
+
+  document.getElementById('checkin-display').textContent = today.checkin || '—';
+  document.getElementById('checkout-display').textContent = today.checkout || '—';
+
+  const wm = workedMins(today.checkin, today.checkout);
+  const pct = Math.min(100, Math.round(wm / WORK_MINS * 100));
+  const btn = document.getElementById('main-btn');
+
+  if(!today.checkin) {
+    btn.textContent = 'Registreeri saabumine';
+    btn.className = 'action-btn';
+    btn.disabled = false;
+    document.getElementById('progress-section').style.display = 'none';
+  } else if(!today.checkout) {
+    btn.textContent = 'Registreeri lahkumine';
+    btn.className = 'action-btn checkout';
+    btn.disabled = false;
+    document.getElementById('progress-section').style.display = 'block';
+    updateProgress(wm, pct, false);
+  } else {
+    btn.textContent = 'Päev lõpetatud ✓';
+    btn.className = 'action-btn';
+    btn.disabled = true;
+    document.getElementById('progress-section').style.display = 'block';
+    updateProgress(wm, pct, true);
+  }
+
+  renderHistory();
+}
+
+function updateProgress(wm, pct, done) {
+  document.getElementById('progress-pct').textContent = pct + '%';
+  const fill = document.getElementById('progress-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'progress-fill' + (pct >= 100 ? ' over' : pct >= 75 ? '' : ' warn');
+
+  const badge = document.getElementById('status-badge-wrap');
+  const diff = wm - WORK_MINS;
+  let cls, txt;
+  if(!done) {
+    if(diff >= 0) { cls='badge-ok'; txt='✓ Norm täidetud, ' + minsToStr(diff) + ' üle'; }
+    else if(wm >= WORK_MINS*0.75) { cls='badge-warn'; txt='Jääb ' + minsToStr(-diff); }
+    else { cls='badge-neutral'; txt=minsToStr(wm) + ' tehtud'; }
+  } else {
+    if(diff >= 0) { cls='badge-ok'; txt='✓ ' + minsToStr(wm) + ' — norm täidetud'; }
+    else { cls='badge-danger'; txt='⚠ Puudub ' + minsToStr(-diff); }
+  }
+  badge.innerHTML = `<span class="status-badge ${cls}">${txt}</span>`;
+}
+
+function renderHistory() {
+  const ud = getUserData(currentUser);
+  const today = todayKey();
+  const entries = Object.entries(ud)
+    .filter(([k]) => k !== today)
+    .sort((a,b) => b[0].localeCompare(a[0]))
+    .slice(0, 10);
+
+  const list = document.getElementById('history-list');
+  if(!entries.length) {
+    list.innerHTML = '<div class="empty-history">Ajalugu puudub</div>';
+    return;
+  }
+
+  list.innerHTML = entries.map(([dateKey, rec]) => {
+    const wm = rec.checkin && rec.checkout ? workedMins(rec.checkin, rec.checkout) : null;
+    const [y,m,dd] = dateKey.split('-');
+    const d = new Date(+y,+m-1,+dd);
+    const days = ['P','E','T','K','N','R','L'];
+    const dateStr = days[d.getDay()] + ' ' + dd + '.' + m;
+    const timesStr = rec.checkin ? (rec.checkin + (rec.checkout ? ' – ' + rec.checkout : ' – ?')) : '—';
+    const hoursHtml = wm !== null
+      ? `<span class="history-hours ${wm >= WORK_MINS ? 'hours-ok' : 'hours-bad'}">${minsToStr(wm)}</span>`
+      : `<span class="history-hours" style="color:var(--muted)">—</span>`;
+    return `<div class="history-item">
+      <span class="history-date">${dateStr}</span>
+      <span class="history-times">${timesStr}</span>
+      ${hoursHtml}
+    </div>`;
+  }).join('');
+}
+
+function tick() {
+  const d = new Date();
+  const clock = document.getElementById('live-clock');
+  if(clock) clock.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  if(currentUser && getToday().checkin && !getToday().checkout) {
+    renderMain();
+  }
+}
+
+// Header date
+const hd = new Date();
+document.getElementById('header-date').textContent = hd.toLocaleDateString('et-EE', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+tick();
+setInterval(() => {
+  const clock = document.getElementById('live-clock');
+  if(clock) { const d=new Date(); clock.textContent = pad(d.getHours())+':'+pad(d.getMinutes()); }
+}, 10000);
+</script>
+</body>
+</html>
